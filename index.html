@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Task Tracker</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --text: #151f32;
+      --muted: #697386;
+      --border: #e3e9f2;
+      --soft-border: #edf2f7;
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --success: #14a66f;
+      --success-soft: #e8f8f0;
+      --danger: #dc2626;
+      --danger-soft: #fff1f2;
+      --shadow: 0 24px 70px rgba(21, 31, 50, 0.12);
+      --task-shadow: 0 10px 26px rgba(21, 31, 50, 0.06);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 32rem),
+        linear-gradient(180deg, #f9fbff 0%, var(--bg) 58%, #eef3f8 100%);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .app {
+      width: min(720px, 100%);
+      margin: 0 auto;
+      padding: 44px 18px;
+    }
+
+    header {
+      margin-bottom: 26px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2.15rem, 7vw, 3.35rem);
+      line-height: 1.05;
+      letter-spacing: 0;
+      color: #101827;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 26px;
+    }
+
+    .task-form {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .task-input {
+      flex: 1;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 15px 16px;
+      color: var(--text);
+      font: inherit;
+      font-size: 1rem;
+      background: #fbfdff;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .task-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+
+    .add-button,
+    .delete-button {
+      border: 0;
+      border-radius: 12px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+      transition: background 0.2s, box-shadow 0.2s, color 0.2s, transform 0.2s;
+    }
+
+    .add-button {
+      background: var(--accent);
+      color: #ffffff;
+      min-height: 52px;
+      padding: 0 22px;
+      box-shadow: 0 12px 24px rgba(37, 99, 235, 0.24);
+    }
+
+    .add-button:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 16px 28px rgba(37, 99, 235, 0.28);
+    }
+
+    .add-button:active,
+    .delete-button:active {
+      transform: translateY(0);
+    }
+
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .list-header strong {
+      color: #334155;
+      font-weight: 800;
+    }
+
+    .task-list {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .task-item {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 14px;
+      border: 1px solid var(--soft-border);
+      border-radius: 14px;
+      padding: 14px;
+      background: #ffffff;
+      box-shadow: var(--task-shadow);
+      transition: border-color 0.2s, box-shadow 0.2s, opacity 0.2s, transform 0.2s;
+    }
+
+    .task-item:hover {
+      border-color: #d6e0ec;
+      transform: translateY(-1px);
+      box-shadow: 0 14px 32px rgba(21, 31, 50, 0.08);
+    }
+
+    .task-checkbox {
+      appearance: none;
+      display: grid;
+      place-items: center;
+      width: 24px;
+      height: 24px;
+      margin: 0;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      background: #ffffff;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .task-checkbox::before {
+      width: 7px;
+      height: 12px;
+      border: solid #ffffff;
+      border-width: 0 2px 2px 0;
+      content: "";
+      opacity: 0;
+      transform: rotate(45deg) scale(0.8);
+      transition: opacity 0.2s, transform 0.2s;
+    }
+
+    .task-checkbox:checked {
+      border-color: var(--success);
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(20, 166, 111, 0.14);
+    }
+
+    .task-checkbox:checked::before {
+      opacity: 1;
+      transform: rotate(45deg) scale(1);
+    }
+
+    .task-title {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-weight: 700;
+      color: #1f2937;
+    }
+
+    .task-item.completed {
+      border-color: #d8efe4;
+      background: var(--success-soft);
+      box-shadow: none;
+      opacity: 0.74;
+    }
+
+    .task-item.completed .task-title {
+      color: #5f6d7d;
+      text-decoration: line-through;
+      text-decoration-thickness: 2px;
+      text-decoration-color: rgba(20, 166, 111, 0.55);
+    }
+
+    .delete-button {
+      background: var(--danger-soft);
+      color: var(--danger);
+      padding: 9px 12px;
+      font-size: 0.9rem;
+    }
+
+    .delete-button:hover {
+      background: #ffe4e6;
+      color: #b91c1c;
+    }
+
+    .empty-state {
+      border: 1px dashed #c7d2e0;
+      border-radius: 14px;
+      padding: 28px 16px;
+      color: var(--muted);
+      text-align: center;
+      background: #fbfdff;
+    }
+
+    @media (max-width: 560px) {
+      .app {
+        padding: 30px 14px;
+      }
+
+      .card {
+        border-radius: 16px;
+        padding: 18px;
+      }
+
+      .task-form {
+        flex-direction: column;
+      }
+
+      .add-button {
+        min-height: 50px;
+      }
+
+      .list-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .task-item {
+        grid-template-columns: auto 1fr;
+        padding: 13px;
+      }
+
+      .delete-button {
+        grid-column: 2;
+        justify-self: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>Daily Task Tracker</h1>
+      <p class="subtitle">Stay on top of your daily tasks with a simple list</p>
+    </header>
+
+    <section class="card" aria-label="Daily tasks">
+      <form class="task-form" id="taskForm">
+        <label class="visually-hidden" for="taskInput">Task name</label>
+        <input
+          class="task-input"
+          id="taskInput"
+          type="text"
+          autocomplete="off"
+          placeholder="Add a task for today"
+          required
+        />
+        <button class="add-button" type="submit">Add Task</button>
+      </form>
+
+      <div class="list-header">
+        <span id="todayLabel"></span>
+        <strong id="taskCount">0 tasks</strong>
+      </div>
+
+      <ul class="task-list" id="taskList"></ul>
+      <p class="empty-state" id="emptyState">No tasks for today yet.</p>
+    </section>
+  </main>
+
+  <script>
+    const storageKey = "daily-task-tracker-tasks";
+    const taskForm = document.querySelector("#taskForm");
+    const taskInput = document.querySelector("#taskInput");
+    const taskList = document.querySelector("#taskList");
+    const emptyState = document.querySelector("#emptyState");
+    const taskCount = document.querySelector("#taskCount");
+    const todayLabel = document.querySelector("#todayLabel");
+
+    const today = new Date();
+    const todayId = formatLocalDate(today);
+    const readableToday = today.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric"
+    });
+
+    let tasks = loadTasks();
+
+    todayLabel.textContent = `Today: ${readableToday}`;
+    renderTasks();
+
+    taskForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const title = taskInput.value.trim();
+
+      if (!title) {
+        return;
+      }
+
+      tasks.push({
+        id: createTaskId(),
+        title,
+        completed: false,
+        date: todayId
+      });
+
+      saveTasks();
+      taskInput.value = "";
+      taskInput.focus();
+      renderTasks();
+    });
+
+    taskList.addEventListener("click", (event) => {
+      const item = event.target.closest("[data-task-id]");
+
+      if (!item) {
+        return;
+      }
+
+      const taskId = item.dataset.taskId;
+
+      if (event.target.matches(".task-checkbox")) {
+        tasks = tasks.map((task) => {
+          if (task.id !== taskId) {
+            return task;
+          }
+
+          return { ...task, completed: event.target.checked };
+        });
+      }
+
+      if (event.target.matches(".delete-button")) {
+        tasks = tasks.filter((task) => task.id !== taskId);
+      }
+
+      saveTasks();
+      renderTasks();
+    });
+
+    function loadTasks() {
+      const savedTasks = localStorage.getItem(storageKey);
+
+      if (!savedTasks) {
+        return [];
+      }
+
+      try {
+        return JSON.parse(savedTasks);
+      } catch {
+        return [];
+      }
+    }
+
+    function saveTasks() {
+      localStorage.setItem(storageKey, JSON.stringify(tasks));
+    }
+
+    function createTaskId() {
+      if (crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+
+      return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function formatLocalDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    }
+
+    function renderTasks() {
+      const todaysTasks = tasks.filter((task) => task.date === todayId);
+      const completedCount = todaysTasks.filter((task) => task.completed).length;
+
+      taskList.innerHTML = "";
+      emptyState.hidden = todaysTasks.length > 0;
+      taskCount.textContent = `${completedCount}/${todaysTasks.length} completed`;
+
+      todaysTasks.forEach((task) => {
+        const item = document.createElement("li");
+        item.className = `task-item${task.completed ? " completed" : ""}`;
+        item.dataset.taskId = task.id;
+
+        const checkbox = document.createElement("input");
+        checkbox.className = "task-checkbox";
+        checkbox.type = "checkbox";
+        checkbox.checked = task.completed;
+        checkbox.setAttribute("aria-label", `Mark ${task.title} as completed`);
+
+        const title = document.createElement("span");
+        title.className = "task-title";
+        title.textContent = task.title;
+
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "delete-button";
+        deleteButton.type = "button";
+        deleteButton.textContent = "Delete";
+        deleteButton.setAttribute("aria-label", `Delete ${task.title}`);
+
+        item.append(checkbox, title, deleteButton);
+        taskList.append(item);
+      });
+    }
+  </script>
+</body>
+</html>
